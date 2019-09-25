@@ -80,9 +80,6 @@ struct Command {
 #define OLEACC_LIBRARY_NAME L"OLEACC.DLL"
 #define OBJECT_FROM_LRESULT_FUNCTION_NAME "ObjectFromLresult"
 #define IDM_STARTDIAGNOSTICSMODE 3802 
-#define FAIL_IF_NOT_S_OK(hr) ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr)
-#define PIPE_NAME_TEMPLATE "\\\\.\\pipe\\JSObjectCreatorPipe"
-#define NAMED_PIPE_BUFFER_SIZE 1024
 
 void LogError(const std::string& message, HRESULT hr) {
   std::cout << message << std::endl;
@@ -90,12 +87,12 @@ void LogError(const std::string& message, HRESULT hr) {
   std::cout << "Error code received: " << error_code << std::endl;
   std::vector<char> system_message_buffer(256);
   DWORD is_formatted = ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                        NULL,
+                                        nullptr,
                                         error_code,
                                         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                         &system_message_buffer[0],
                                         system_message_buffer.size(),
-                                        NULL);
+                                        nullptr);
   if (is_formatted > 0) {
     std::string system_message = &system_message_buffer[0];
     std::cout << "Error message received: " << system_message << std::endl;
@@ -155,7 +152,7 @@ bool GetDocumentFromWindowHandle(HWND window_handle,
 
   // Explicitly load MSAA so we know if it's installed
   HINSTANCE oleacc_instance_handle = ::LoadLibrary(OLEACC_LIBRARY_NAME);
-  if (window_handle != NULL && oleacc_instance_handle) {
+  if (window_handle != nullptr && oleacc_instance_handle) {
     LRESULT result;
 
     ::SendMessageTimeout(window_handle,
@@ -169,7 +166,7 @@ bool GetDocumentFromWindowHandle(HWND window_handle,
     LPFNOBJECTFROMLRESULT object_pointer =
         reinterpret_cast<LPFNOBJECTFROMLRESULT>(::GetProcAddress(oleacc_instance_handle,
                                                                  OBJECT_FROM_LRESULT_FUNCTION_NAME));
-    if (object_pointer != NULL) {
+    if (object_pointer != nullptr) {
       HRESULT hr;
       hr = (*object_pointer)(result,
                              IID_IHTMLDocument2,
@@ -194,30 +191,30 @@ bool LaunchIE(const std::wstring& initial_browser_url,
   PROCESS_INFORMATION proc_info;
   HRESULT hr = ::IELaunchURL(initial_browser_url.c_str(),
                              &proc_info,
-                             NULL);
+                             nullptr);
   DWORD process_id = proc_info.dwProcessId;
   ::WaitForInputIdle(proc_info.hProcess,
                      WAIT_FOR_IDLE_TIMEOUT_IN_MILLISECONDS);
 
-  if (NULL != proc_info.hThread) {
+  if (nullptr != proc_info.hThread) {
     ::CloseHandle(proc_info.hThread);
   }
 
-  if (NULL != proc_info.hProcess) {
+  if (nullptr != proc_info.hProcess) {
     ::CloseHandle(proc_info.hProcess);
   }
 
   ProcessWindowInfo process_window_info;
   process_window_info.dwProcessId = proc_info.dwProcessId;
-  process_window_info.hwndBrowser = NULL;
+  process_window_info.hwndBrowser = nullptr;
   clock_t end = clock() + (browser_attach_timeout / 1000 * CLOCKS_PER_SEC);
-  while (NULL == process_window_info.hwndBrowser) {
+  while (nullptr == process_window_info.hwndBrowser) {
     if (browser_attach_timeout > 0 && (clock() > end)) {
       break;
     }
     ::EnumWindows(&FindBrowserWindow,
                   reinterpret_cast<LPARAM>(&process_window_info));
-    if (NULL == process_window_info.hwndBrowser) {
+    if (nullptr == process_window_info.hwndBrowser) {
       ::Sleep(BROWSER_ATTACH_SLEEP_INTERVAL_IN_MILLISECONDS);
     }
   }
@@ -283,13 +280,13 @@ HRESULT StartDiagnosticsMode(_In_ IHTMLDocument2* pDocument,
   CComBSTR guid(clsid);
   CComSafeArray<BSTR> spSafeArray(4);
   hr = spSafeArray.SetAt(0, ::SysAllocString(guid), FALSE);
-  FAIL_IF_NOT_S_OK(hr);
+  ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr);
   hr = spSafeArray.SetAt(1, ::SysAllocString(path), FALSE);
-  FAIL_IF_NOT_S_OK(hr);
+  ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr);
   hr = spSafeArray.SetAt(2, ::SysAllocString(L""), FALSE);
-  FAIL_IF_NOT_S_OK(hr);
+  ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr);
   hr = spSafeArray.SetAt(3, ::SysAllocString(L""), FALSE);
-  FAIL_IF_NOT_S_OK(hr);
+  ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr);
 
   // Start diagnostics mode
   CComVariant varParams(spSafeArray);
@@ -299,13 +296,13 @@ HRESULT StartDiagnosticsMode(_In_ IHTMLDocument2* pDocument,
                              OLECMDEXECOPT_DODEFAULT,
                              &varParams,
                              &varSite);
-  FAIL_IF_NOT_S_OK(hr);
+  ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr);
   ATLENSURE_RETURN_VAL(varSite.vt == VT_UNKNOWN, E_UNEXPECTED);
   ATLENSURE_RETURN_VAL(varSite.punkVal != nullptr, E_UNEXPECTED);
   // Get the requested interface
   if (ppOut) {
     hr = varSite.punkVal->QueryInterface(iid, ppOut);
-    FAIL_IF_NOT_S_OK(hr);
+    ATLENSURE_RETURN_HR(hr == S_OK, SUCCEEDED(hr) ? E_FAIL : hr);
   }
   return hr;
 }
@@ -322,16 +319,16 @@ void SetCommand(HWND window_handle, Command command) {
 }
 
 bool WaitForCommandComplete(HWND window_handle, int* response_size) {
-  size_t response_length = static_cast<size_t>(::SendMessage(window_handle,
-                                                             WM_GET_RESPONSE_LENGTH,
-                                                             NULL,
-                                                             NULL));
+  LRESULT response_length = ::SendMessage(window_handle,
+                                          WM_GET_RESPONSE_LENGTH,
+                                          NULL,
+                                          NULL);
   while (response_length == 0) {
     ::Sleep(10);
-    response_length = static_cast<size_t>(::SendMessage(window_handle,
-                                                        WM_GET_RESPONSE_LENGTH,
-                                                        NULL,
-                                                        NULL));
+    response_length = ::SendMessage(window_handle,
+                                    WM_GET_RESPONSE_LENGTH,
+                                    NULL,
+                                    NULL);
   }
 
   *response_size = static_cast<int>(response_length);
@@ -368,14 +365,14 @@ std::string ExecuteCommand(Command command,
 
 int main() {
   int created_status = 0;
-  ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+  ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   DataWindow return_window;
   return_window.Create(HWND_MESSAGE);
   BOOL allow = ::ChangeWindowMessageFilterEx(return_window.m_hWnd,
                                              WM_COPYDATA,
                                              MSGFLT_ALLOW,
-                                             NULL);
+                                             nullptr);
 
   std::wstring initial_browser_url = L"https://stackoverflow.com";
   CComPtr<IHTMLDocument2> document;
@@ -425,7 +422,7 @@ int main() {
   }
   else {
     std::cout << "Failed to launch IE and get reference to document"
-      << std::endl;
+              << std::endl;
   }
   std::cout << "Process complete" << std::endl;
 
@@ -433,14 +430,3 @@ int main() {
   return_window.DestroyWindow();
   return created_status;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

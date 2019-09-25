@@ -1,22 +1,6 @@
-// Licensed to the Software Freedom Conservancy (SFC) under one
-// or more contributor license agreements. See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership. The SFC licenses this file
-// to you under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 #include "stdafx.h"
 #include "StringUtilities.h"
-//#include <Windows.h>
 
 #define WHITESPACE " \n\r\t"
 #define WIDE_WHITESPACE L" \n\r\t"
@@ -38,28 +22,28 @@ std::wstring StringUtilities::ToWString(const std::string& input) {
   int wide_string_length = input_string_byte_count;
   std::vector<wchar_t> output_buffer(wide_string_length);
   bool convert_failed = (0 == ::MultiByteToWideChar(CP_UTF8,
-    0,
-    input.c_str(),
-    input_string_byte_count,
-    &output_buffer[0],
-    wide_string_length));
+                                                    0,
+                                                    input.c_str(),
+                                                    input_string_byte_count,
+                                                    &output_buffer[0],
+                                                    wide_string_length));
   if (convert_failed) {
     if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
       // Buffer wasn't big enough. Call MultiByteToWideChar again with
-      // NULL values to determine how big the buffer should be.
+      // null pointer values to determine how big the buffer should be.
       wide_string_length = ::MultiByteToWideChar(CP_UTF8,
-        0,
-        input.c_str(),
-        input_string_byte_count,
-        NULL,
-        0);
+                                                 0,
+                                                 input.c_str(),
+                                                 input_string_byte_count,
+                                                 nullptr,
+                                                 0);
       output_buffer.resize(wide_string_length);
       convert_failed = (0 == ::MultiByteToWideChar(CP_UTF8,
-        0,
-        input.c_str(),
-        input_string_byte_count,
-        &output_buffer[0],
-        wide_string_length));
+                                                   0,
+                                                   input.c_str(),
+                                                   input_string_byte_count,
+                                                   &output_buffer[0],
+                                                   wide_string_length));
       if (!convert_failed) {
         output = &output_buffer[0];
       }
@@ -82,34 +66,34 @@ std::string StringUtilities::ToString(const std::wstring& input) {
   int output_string_byte_count = wide_string_length * 4;
   std::vector<char> string_buffer(output_string_byte_count);
   bool convert_failed = (0 == ::WideCharToMultiByte(CP_UTF8,
-    0,
-    input.c_str(),
-    wide_string_length,
-    &string_buffer[0],
-    output_string_byte_count,
-    NULL,
-    NULL));
+                                                    0,
+                                                    input.c_str(),
+                                                    wide_string_length,
+                                                    &string_buffer[0],
+                                                    output_string_byte_count,
+                                                    nullptr,
+                                                    nullptr));
   if (convert_failed) {
     if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
       // Buffer wasn't big enough. Call WideCharToMultiByte again with
-      // NULL values to determine how big the buffer should be.
+      // null pointer values to determine how big the buffer should be.
       output_string_byte_count = ::WideCharToMultiByte(CP_UTF8,
-        0,
-        input.c_str(),
-        wide_string_length,
-        NULL,
-        0,
-        NULL,
-        NULL);
+                                                       0,
+                                                       input.c_str(),
+                                                       wide_string_length,
+                                                       nullptr,
+                                                       0,
+                                                       nullptr,
+                                                       nullptr);
       string_buffer.resize(output_string_byte_count);
       convert_failed = (0 == ::WideCharToMultiByte(CP_UTF8,
-        0,
-        input.c_str(),
-        wide_string_length,
-        &string_buffer[0],
-        output_string_byte_count,
-        NULL,
-        NULL));
+                                                   0,
+                                                   input.c_str(),
+                                                   wide_string_length,
+                                                   &string_buffer[0],
+                                                   output_string_byte_count,
+                                                   nullptr,
+                                                   nullptr));
       if (!convert_failed) {
         output = &string_buffer[0];
       }
@@ -143,13 +127,15 @@ std::wstring StringUtilities::Format(const wchar_t* format, ...) {
   return formatted;
 }
 
-void StringUtilities::ToBuffer(const std::string& input, std::vector<char>* buffer) {
+void StringUtilities::ToBuffer(const std::string& input,
+                               std::vector<char>* buffer) {
   buffer->resize(input.size() + 1);
   strcpy_s(&((*buffer)[0]), buffer->size(), input.c_str());
   (*buffer)[buffer->size() - 1] = L'\0';
 }
 
-void StringUtilities::ToBuffer(const std::wstring& input, std::vector<wchar_t>* buffer) {
+void StringUtilities::ToBuffer(const std::wstring& input,
+                               std::vector<wchar_t>* buffer) {
   buffer->resize(input.size() + 1);
   wcscpy_s(&((*buffer)[0]), buffer->size(), input.c_str());
   (*buffer)[buffer->size() - 1] = L'\0';
@@ -184,16 +170,15 @@ std::wstring StringUtilities::TrimRight(const std::wstring& input) {
 }
 
 void StringUtilities::Split(const std::string& input,
-  const std::string& delimiter,
-  std::vector<std::string>* tokens) {
+                            const std::string& delimiter,
+                            std::vector<std::string>* tokens) {
   std::string input_copy = input;
   while (input_copy.size() > 0) {
     size_t delimiter_pos = input_copy.find(delimiter);
     std::string token = input_copy.substr(0, delimiter_pos);
     if (delimiter_pos == std::string::npos) {
       input_copy = "";
-    }
-    else {
+    } else {
       input_copy = input_copy.substr(delimiter_pos + delimiter.size());
     }
     tokens->push_back(token);
@@ -201,8 +186,8 @@ void StringUtilities::Split(const std::string& input,
 }
 
 void StringUtilities::Split(const std::wstring& input,
-  const std::wstring& delimiter,
-  std::vector<std::wstring>* tokens) {
+                            const std::wstring& delimiter,
+                            std::vector<std::wstring>* tokens) {
   std::wstring input_copy = input;
   while (input_copy.size() > 0) {
     size_t delimiter_pos = input_copy.find(delimiter);
@@ -219,7 +204,7 @@ void StringUtilities::Split(const std::wstring& input,
 
 std::wstring StringUtilities::CreateGuid() {
   UUID guid;
-  RPC_WSTR guid_string = NULL;
+  RPC_WSTR guid_string = nullptr;
   RPC_STATUS status = ::UuidCreate(&guid);
   if (status != RPC_S_OK) {
     // If we encounter an error, not bloody much we can do about it.
@@ -254,16 +239,16 @@ void StringUtilities::NormalizeUnicodeString(NORM_FORM normalization_form,
   std::wstring* input) {
   if (FALSE == ::IsNormalizedString(normalization_form, input->c_str(), -1)) {
     int required = ::NormalizeString(normalization_form,
-      input->c_str(),
-      -1,
-      NULL,
-      0);
+                                     input->c_str(),
+                                     -1,
+                                     nullptr,
+                                     0);
     std::vector<wchar_t> buffer(required);
     ::NormalizeString(normalization_form,
-      input->c_str(),
-      -1,
-      &buffer[0],
-      static_cast<int>(buffer.size()));
+                      input->c_str(),
+                      -1,
+                      &buffer[0],
+                      static_cast<int>(buffer.size()));
     *input = &buffer[0];
   }
 }

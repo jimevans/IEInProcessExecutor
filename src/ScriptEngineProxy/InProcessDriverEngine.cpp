@@ -15,7 +15,7 @@
 #define ANONYMOUS_FUNCTION_END L" })();"
 
 struct WaitThreadContext {
-	HWND window_handle;
+  HWND window_handle;
 };
 
 // InProcessDriverEngine
@@ -50,17 +50,17 @@ STDMETHODIMP_(HRESULT __stdcall) InProcessDriverEngine::SetSite(IUnknown* pUnkSi
     hr = spSP->QueryService(IID_IDiagnosticsScriptEngineProvider, &spEngineProvider);
     hr = spEngineProvider->CreateDiagnosticsScriptEngine(this, FALSE, 0, &this->script_engine_);
 
-	  CComPtr<IServiceProvider> browser_service_provider;
-	  hr = browser->QueryInterface<IServiceProvider>(&browser_service_provider);
-	  CComPtr<IOleWindow> window;
-	  hr = browser_service_provider->QueryService<IOleWindow>(SID_SShellBrowser, &window);
-	  HWND handle;
-	  window->GetWindow(&handle);
+    CComPtr<IServiceProvider> browser_service_provider;
+    hr = browser->QueryInterface<IServiceProvider>(&browser_service_provider);
+    CComPtr<IOleWindow> window;
+    hr = browser_service_provider->QueryService<IOleWindow>(SID_SShellBrowser, &window);
+    HWND handle;
+    window->GetWindow(&handle);
 
     this->browser_ = browser;
     this->script_host_document_ = document;
     hr = this->script_engine_->EvaluateScript(L"browser.addEventListener('consoleMessage', function(e) { external.sendMessage('consoleMessage', JSON.stringify(e)); });", L"");
-	  this->DispEventAdvise(browser);
+    this->DispEventAdvise(browser);
   }
   return hr;
 }
@@ -95,20 +95,20 @@ STDMETHODIMP_(HRESULT __stdcall) InProcessDriverEngine::OnScriptError(IActiveScr
 }
 
 STDMETHODIMP_(void) InProcessDriverEngine::OnBeforeNavigate2(LPDISPATCH pDisp,
-	                                                           VARIANT* pvarUrl,
-	                                                           VARIANT* pvarFlags,
-	                                                           VARIANT* pvarTargetFrame,
-	                                                           VARIANT* pvarData,
-	                                                           VARIANT* pvarHeaders,
-	                                                           VARIANT_BOOL* pbCancel) {
+                                                             VARIANT* pvarUrl,
+                                                             VARIANT* pvarFlags,
+                                                             VARIANT* pvarTargetFrame,
+                                                             VARIANT* pvarData,
+                                                             VARIANT* pvarHeaders,
+                                                             VARIANT_BOOL* pbCancel) {
 }
 
 STDMETHODIMP_(void) InProcessDriverEngine::OnNavigateComplete2(LPDISPATCH pDisp,
                                                                VARIANT* URL) {
-	if (this->browser_.IsEqualObject(pDisp)) {
-		this->is_navigating_ = false;
-		this->CreateWaitThread(this->m_hWnd);
-	}
+  if (this->browser_.IsEqualObject(pDisp)) {
+    this->is_navigating_ = false;
+    this->CreateWaitThread(this->m_hWnd);
+  }
 }
 
 STDMETHODIMP_(void) InProcessDriverEngine::OnDocumentComplete(LPDISPATCH pDisp,
@@ -116,15 +116,15 @@ STDMETHODIMP_(void) InProcessDriverEngine::OnDocumentComplete(LPDISPATCH pDisp,
 }
 
 STDMETHODIMP_(void) InProcessDriverEngine::OnNewWindow(LPDISPATCH ppDisp,
-	                                                     VARIANT_BOOL* pbCancel,
-	                                                     DWORD dwFlags,
-	                                                     BSTR bstrUrlContext,
-	                                                     BSTR bstrUrl) {
+                                                       VARIANT_BOOL* pbCancel,
+                                                       DWORD dwFlags,
+                                                       BSTR bstrUrlContext,
+                                                       BSTR bstrUrl) {
 }
 
 STDMETHODIMP_(void) InProcessDriverEngine::OnNewProcess(DWORD lCauseFlag,
-	                                                      IDispatch* pWB2,
-	                                                      VARIANT_BOOL* pbCancel) {
+                                                        IDispatch* pWB2,
+                                                        VARIANT_BOOL* pbCancel) {
 }
 
 STDMETHODIMP_(void) InProcessDriverEngine::OnQuit() {
@@ -165,23 +165,23 @@ LRESULT InProcessDriverEngine::OnGetResponseLength(UINT nMsg,
                                                    WPARAM wParam,
                                                    LPARAM lParam,
                                                    BOOL& handled) {
-    return this->response_.size();
+    return static_cast<LRESULT>(this->response_.size());
 }
 
 LRESULT InProcessDriverEngine::OnGetResponse(UINT nMsg,
                                              WPARAM wParam,
                                              LPARAM lParam,
                                              BOOL& handled) {
-	HWND return_window_handle = NULL;
-	if (wParam != NULL) {
-		return_window_handle = reinterpret_cast<HWND>(wParam);
-	}
-	
-	this->SendResponse(return_window_handle, this->response_);
+  HWND return_window_handle = nullptr;
+  if (wParam != NULL) {
+    return_window_handle = reinterpret_cast<HWND>(wParam);
+  }
+  
+  this->SendResponse(return_window_handle, this->response_);
   // Reset the serialized response for the next command.
   this->response_ = "";
   this->current_command_ = "";
-	this->command_data_ = "";
+  this->command_data_ = "";
   return 0;
 }
 
@@ -189,12 +189,12 @@ LRESULT InProcessDriverEngine::OnWait(UINT nMsg,
                                       WPARAM wParam,
                                       LPARAM lParam,
                                       BOOL& handled) {
-	if (this->IsDocumentReady()) {
-		this->response_ = "done";
-	} else {
-		this->CreateWaitThread(this->m_hWnd);
-	}
-	return 0;
+  if (this->IsDocumentReady()) {
+    this->response_ = "done";
+  } else {
+    this->CreateWaitThread(this->m_hWnd);
+  }
+  return 0;
 }
 
 LRESULT InProcessDriverEngine::OnExecuteCommand(UINT nMsg,
@@ -203,7 +203,7 @@ LRESULT InProcessDriverEngine::OnExecuteCommand(UINT nMsg,
                                                 BOOL& handled) {
   std::string response = "";
   if (this->current_command_ == "getTitle") {
-	  this->GetTitle();
+    this->GetTitle();
   } else if (this->current_command_ == "get") {
     this->Navigate();
   } else if (this->current_command_ == "snapshot") {
@@ -219,58 +219,58 @@ LRESULT InProcessDriverEngine::OnExecuteCommand(UINT nMsg,
 
 void InProcessDriverEngine::SendResponse(HWND window_handle,
                                          std::string response) {
-	std::vector<char> buffer(response.size() + 1);
-	memcpy_s(&buffer[0], response.size() + 1, response.c_str(), response.size());
-	buffer[buffer.size() - 1] = '\0';
-	COPYDATASTRUCT copy_data;
-	copy_data.cbData = buffer.size();
-	copy_data.lpData = reinterpret_cast<void*>(&buffer[0]);
-	::SendMessage(window_handle,
+  std::vector<char> buffer(response.size() + 1);
+  memcpy_s(&buffer[0], response.size() + 1, response.c_str(), response.size());
+  buffer[buffer.size() - 1] = '\0';
+  COPYDATASTRUCT copy_data;
+  copy_data.cbData = buffer.size();
+  copy_data.lpData = reinterpret_cast<void*>(&buffer[0]);
+  ::SendMessage(window_handle,
                 WM_COPYDATA,
                 reinterpret_cast<WPARAM>(this->m_hWnd),
                 reinterpret_cast<LPARAM>(&copy_data));
 }
 
 void InProcessDriverEngine::GetTitle() {
-	CComPtr<IDispatch> dispatch;
-	HRESULT hr = this->browser_->get_Document(&dispatch);
-	if (FAILED(hr)) {
-	}
+  CComPtr<IDispatch> dispatch;
+  HRESULT hr = this->browser_->get_Document(&dispatch);
+  if (FAILED(hr)) {
+  }
 
-	CComPtr<IHTMLDocument2> doc;
-	hr = dispatch->QueryInterface(&doc);
-	if (FAILED(hr)) {
-	}
+  CComPtr<IHTMLDocument2> doc;
+  hr = dispatch->QueryInterface(&doc);
+  if (FAILED(hr)) {
+  }
 
-	CComBSTR title;
-	hr = doc->get_title(&title);
-	if (FAILED(hr)) {
-	}
+  CComBSTR title;
+  hr = doc->get_title(&title);
+  if (FAILED(hr)) {
+  }
 
-	std::wstring converted_title = title;
-	this->response_ = StringUtilities::ToString(converted_title);
+  std::wstring converted_title = title;
+  this->response_ = StringUtilities::ToString(converted_title);
 }
 
 void InProcessDriverEngine::Navigate() {
-	this->is_navigating_ = true;
-	std::wstring url = StringUtilities::ToWString(this->command_data_);
-	this->is_navigating_ = true;
-	CComVariant dummy;
-	CComVariant url_variant(url.c_str());
-	HRESULT hr = this->browser_->Navigate2(&url_variant,
-											&dummy,
-											&dummy,
-											&dummy,
-											&dummy);
-	if (FAILED(hr)) {
-		this->is_navigating_ = false;
-		_com_error error(hr);
-		std::wstring formatted_message = 
+  this->is_navigating_ = true;
+  std::wstring url = StringUtilities::ToWString(this->command_data_);
+  this->is_navigating_ = true;
+  CComVariant dummy;
+  CComVariant url_variant(url.c_str());
+  HRESULT hr = this->browser_->Navigate2(&url_variant,
+                      &dummy,
+                      &dummy,
+                      &dummy,
+                      &dummy);
+  if (FAILED(hr)) {
+    this->is_navigating_ = false;
+    _com_error error(hr);
+    std::wstring formatted_message = 
         StringUtilities::Format(L"Received error: 0x%08x ['%s']",
-			                          hr,
-			                          error.ErrorMessage());
-		this->response_ = StringUtilities::ToString(formatted_message);
-	}
+                                hr,
+                                error.ErrorMessage());
+    this->response_ = StringUtilities::ToString(formatted_message);
+  }
 }
 
 void InProcessDriverEngine::ExecuteExperimentalCommand() {
@@ -279,26 +279,26 @@ void InProcessDriverEngine::ExecuteExperimentalCommand() {
   // efficacy of using IDisplayServices for calculating
   // element positions.
   CComPtr<IDispatch> dispatch;
-	HRESULT hr = this->browser_->get_Document(&dispatch);
-	if (FAILED(hr)) {
-	}
+  HRESULT hr = this->browser_->get_Document(&dispatch);
+  if (FAILED(hr)) {
+  }
 
-	CComPtr<IHTMLDocument2> doc;
-	hr = dispatch->QueryInterface(&doc);
-	if (FAILED(hr)) {
-	}
+  CComPtr<IHTMLDocument2> doc;
+  hr = dispatch->QueryInterface(&doc);
+  if (FAILED(hr)) {
+  }
 
-	CComPtr<IHTMLElement> body;
-	hr = doc->get_body(&body);
+  CComPtr<IHTMLElement> body;
+  hr = doc->get_body(&body);
 
-	CComPtr<IDisplayServices> display;
-	hr = doc->QueryInterface<IDisplayServices>(&display);
-	POINT p = { 0, 0 };
-	hr = display->TransformPoint(&p,
+  CComPtr<IDisplayServices> display;
+  hr = doc->QueryInterface<IDisplayServices>(&display);
+  POINT p = { 0, 0 };
+  hr = display->TransformPoint(&p,
                                COORD_SYSTEM_CLIENT,
                                COORD_SYSTEM_GLOBAL,
                                body);
-	this->response_ = "over";
+  this->response_ = "over";
 }
 
 void InProcessDriverEngine::TakeSnapshot() {
@@ -492,55 +492,56 @@ HRESULT InProcessDriverEngine::GetFocusedDocument(IHTMLDocument2** doc) {
 }
 
 bool InProcessDriverEngine::IsDocumentReady() {
-	HRESULT hr = S_OK;
-	CComPtr<IDispatch> document_dispatch;
-	hr = this->browser_->get_Document(&document_dispatch);
-	if (FAILED(hr) || document_dispatch == nullptr) {
-		return false;
-	}
+  HRESULT hr = S_OK;
+  CComPtr<IDispatch> document_dispatch;
+  hr = this->browser_->get_Document(&document_dispatch);
+  if (FAILED(hr) || document_dispatch == nullptr) {
+    return false;
+  }
 
-	CComPtr<IHTMLDocument2> doc;
-	hr = document_dispatch->QueryInterface<IHTMLDocument2>(&doc);
-	if (FAILED(hr) || doc == nullptr) {
-		return false;
-	}
+  CComPtr<IHTMLDocument2> doc;
+  hr = document_dispatch->QueryInterface<IHTMLDocument2>(&doc);
+  if (FAILED(hr) || doc == nullptr) {
+    return false;
+  }
 
-	CComBSTR ready_state_bstr;
-	hr = doc->get_readyState(&ready_state_bstr);
-	if (FAILED(hr)) {
-		return false;
-	}
+  CComBSTR ready_state_bstr;
+  hr = doc->get_readyState(&ready_state_bstr);
+  if (FAILED(hr)) {
+    return false;
+  }
 
-	return ready_state_bstr == L"complete";
+  return ready_state_bstr == L"complete";
 }
 
 void InProcessDriverEngine::CreateWaitThread(HWND return_handle) {
-	// If we are still waiting, we need to wait a bit then post a message to
-	// ourselves to run the wait again. However, we can't wait using Sleep()
-	// on this thread. This call happens in a message loop, and we would be
-	// unable to process the COM events in the browser if we put this thread
-	// to sleep.
-	WaitThreadContext* thread_context = new WaitThreadContext;
-	thread_context->window_handle = this->m_hWnd;
-	unsigned int thread_id = 0;
-	HANDLE thread_handle = reinterpret_cast<HANDLE>(_beginthreadex(NULL,
-																	0,
-																	&InProcessDriverEngine::WaitThreadProc,
-																	reinterpret_cast<void*>(thread_context),
-																	0,
-																	&thread_id));
-	if (thread_handle != NULL) {
-		::CloseHandle(thread_handle);
-	}
+  // If we are still waiting, we need to wait a bit then post a message to
+  // ourselves to run the wait again. However, we can't wait using Sleep()
+  // on this thread. This call happens in a message loop, and we would be
+  // unable to process the COM events in the browser if we put this thread
+  // to sleep.
+  WaitThreadContext* thread_context = new WaitThreadContext;
+  thread_context->window_handle = this->m_hWnd;
+  unsigned int thread_id = 0;
+  HANDLE thread_handle = reinterpret_cast<HANDLE>(
+      _beginthreadex(nullptr,
+                     0,
+                     &InProcessDriverEngine::WaitThreadProc,
+                     reinterpret_cast<void*>(thread_context),
+                     0,
+                     &thread_id));
+  if (thread_handle != nullptr) {
+    ::CloseHandle(thread_handle);
+  }
 }
 
 
 unsigned int WINAPI InProcessDriverEngine::WaitThreadProc(LPVOID lpParameter) {
-	WaitThreadContext* thread_context = reinterpret_cast<WaitThreadContext*>(lpParameter);
-	HWND window_handle = thread_context->window_handle;
-	delete thread_context;
+  WaitThreadContext* thread_context = reinterpret_cast<WaitThreadContext*>(lpParameter);
+  HWND window_handle = thread_context->window_handle;
+  delete thread_context;
 
-	::Sleep(50);
-	::PostMessage(window_handle, WM_WAIT, NULL, NULL);
-	return 0;
+  ::Sleep(50);
+  ::PostMessage(window_handle, WM_WAIT, NULL, NULL);
+  return 0;
 }
