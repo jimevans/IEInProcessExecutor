@@ -1,0 +1,54 @@
+// ScriptEngineProxy.idl : IDL source for ScriptEngineProxy
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (ScriptEngineProxy.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(cbdf5555-73f8-472d-ae74-8932d2f53748),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IScriptExceptionService : IUnknown
+{
+};
+[
+	object,
+	uuid(c4edf20a-fc4d-4f04-b029-c8d338210d00),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IInProcessDriverEngine : IUnknown
+{
+};
+[
+	uuid(d2dd85a7-1c28-4312-87bf-17358aa4d523),
+	version(1.0),
+]
+library ScriptEngineProxyLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(7e2b9663-b2f0-44f0-890d-64fb08efc779)
+	]
+	coclass ScriptExceptionService
+	{
+		[default] interface IScriptExceptionService;
+	};
+	[
+		uuid(ff5186d0-7673-4ea6-8113-bc960c030891)
+	]
+	coclass InProcessDriverEngine
+	{
+		[default] interface IInProcessDriverEngine;
+	};
+};
+
+import "shobjidl.idl";
+import "shobjidl.idl";
